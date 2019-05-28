@@ -3,3 +3,64 @@
   hosts: all
   roles:
     - role: ansible-role-nginx
+
+      nginx_dependencies:
+        - gnupg2
+        - ca-certificates
+        - logrotate
+
+      nginx_geos:
+        rfc1918:
+          source: $remote_addr
+          values:
+            default: 0
+            10.0.0.0/8: 1
+            172.16.0.0/12: 1
+            192.168.0.0/16: 1
+
+      nginx_maps:
+        connection_upgrade_or_drop:
+          source: $http_upgrade
+          values:
+            default: upgrade
+            '': ''
+
+      nginx_upstreams:
+        localhost:
+          keepalive: 32
+          keepalive_requests: 100
+          keepalive_timeout: 60s
+          strategy: least_conn
+          servers:
+            - 127.0.0.1
+            - 127.0.0.2
+            - 127.0.0.3
+
+      nginx_servers:
+        dummy_host: |
+          server {
+              listen 80 default_server;
+              return 410;
+          }
+
+      nginx_logrotate: |
+        /var/log/nginx/*.log {
+                daily
+                missingok
+                rotate 52
+                compress
+                delaycompress
+                notifempty
+                create 640 nginx adm
+                sharedscripts
+                postrotate
+                        if [ -f /var/run/nginx.pid ]; then
+                                kill -USR1 `cat /var/run/nginx.pid`
+                        fi
+                endscript
+                lastaction
+                        if [ -f /root/bin/varlog/logrotate_nginx_lastaction.sh ]; then
+                                /root/bin/varlog/logrotate_nginx_lastaction.sh > /dev/null 2>&1
+                        fi
+                endscript
+        }
