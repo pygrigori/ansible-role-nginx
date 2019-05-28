@@ -1,0 +1,21 @@
+{{ ansible_managed | comment }}
+
+upstream {{ item.key }} {
+{% if 'strategy' in item.value %}
+    {{ item.value.strategy }};
+
+{% endif %}
+{% for server in item.value.servers %}
+    server {{ server }};
+{% endfor %}
+
+{% if 'keepalive' in item.value %}
+    keepalive {{ item.value.keepalive }};
+{% endif %}
+{% if 'keepalive_requests' in item.value %}
+    keepalive_requests {{ item.value.keepalive_requests }};
+{% endif %}
+{% if 'keepalive_timeout' in item.value %}
+    keepalive_timeout {{ item.value.keepalive_timeout }};
+{% endif %}
+}

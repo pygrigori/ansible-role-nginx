@@ -1,2 +1,129 @@
 ---
 # tasks file for ansible-role-nginx
+
+- block:
+
+    - name: install dependencies
+      apt:
+        name: "{{ nginx_dependencies }}"
+        state: present
+        install_recommends: false
+
+    - name: append key
+      apt_key:
+        url: "{{ nginx_key }}"
+      when: nginx_key | length
+
+    - name: append repo
+      apt_repository:
+        repo: "{{ nginx_repo }}"
+        state: present
+        update_cache: true
+      when: nginx_repo | length
+
+    - name: install pkg
+      apt:
+        name: "{{ nginx_pkg }}"
+        state: present
+        install_recommends: false
+        force: "{{ nginx_pkg_force }}"
+
+    - name: start and enable
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: remove defaults
+      file:
+        path: /etc/nginx/conf.d/default.conf
+        state: absent
+      notify: nginx reload
+
+  become: yes
+  tags:
+    - nginx
+    - install
+
+- block:
+
+    - name: setup config
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify: nginx configtest and reload
+      tags:
+        - log
+        - logs
+
+    - name: setup geos
+      template:
+        src: geo.conf.j2
+        dest: "/etc/nginx/conf.d/geo_{{ item.key }}.conf"
+        owner: root
+        group: root
+        mode: 0644
+      with_dict: "{{ nginx_geos }}"
+      notify: nginx configtest and reload
+      tags:
+        - geo
+        - geos
+
+    - name: setup maps
+      template:
+        src: map.conf.j2
+        dest: "/etc/nginx/conf.d/map_{{ item.key }}.conf"
+        owner: root
+        group: root
+        mode: 0644
+      with_dict: "{{ nginx_maps }}"
+      notify: nginx configtest and reload
+      tags:
+        - map
+        - maps
+
+    - name: setup upstreams
+      template:
+        src: upstream.conf.j2
+        dest: "/etc/nginx/conf.d/upstream_{{ item.key }}.conf"
+        owner: root
+        group: root
+        mode: 0644
+      with_dict: "{{ nginx_upstreams }}"
+      notify: nginx configtest and reload
+      tags:
+        - upstream
+        - upstreams
+
+    - name: setup servers
+      template:
+        src: server.conf.j2
+        dest: "/etc/nginx/conf.d/server_{{ item.key }}.conf"
+        owner: root
+        group: root
+        mode: 0644
+      with_dict: "{{ nginx_servers }}"
+      notify: nginx configtest and reload
+      tags:
+        - server
+        - servers
+
+    - name: setup logrotate
+      template:
+        src: logrotate.j2
+        dest: /etc/logrotate.d/nginx
+        owner: root
+        group: root
+        mode: 0644
+        validate: 'logrotate -d %s'
+      when: nginx_logrotate | length
+      tags:
+        - logrotate
+
+  become: yes
+  tags:
+    - nginx
+    - setup

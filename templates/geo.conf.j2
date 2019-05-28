@@ -1,0 +1,7 @@
+{{ ansible_managed | comment }}
+
+geo {% if 'source' in item.value %}{{ item.value.source }} {% endif %} $geo_{{ item.key }} {
+{% for key, value in item.value['values'] | dictsort %}
+    {{ key }} {{ value }};
+{% endfor %}
+}

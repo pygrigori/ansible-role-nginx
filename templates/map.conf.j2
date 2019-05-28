@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+
+map {{ item.value.source }} $map_{{ item.key }} {
+{% if item.value.hostnames | default(false) %}
+    hostnames;
+
+{% endif %}
+{% for key, value in item.value['values'].items() %}
+    {{ (key == '') | ternary("''", key) }} {{ (value == '') | ternary("''", value) }};
+{% endfor %}
+}
