@@ -34,18 +34,47 @@
         state: started
         enabled: yes
 
-    - name: remove defaults
-      file:
-        path: /etc/nginx/conf.d/default.conf
-        state: absent
-      notify: nginx reload
-
   become: yes
   tags:
     - nginx
     - install
 
 - block:
+
+    - name: create config dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      with_items: "{{ nginx_config_dirs }}"
+      tags:
+        - geo
+        - geos
+        - map
+        - maps
+        - upstream
+        - upstreams
+        - server
+        - servers
+
+    - name: find existing config files
+      find:
+        paths: "{{ nginx_config_dirs }}"
+      register: nginx_existing_config_search
+      tags:
+        - cleanup
+
+    - name: remove undefined configs
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items: "{{ nginx_undefined_configs }}"
+      notify: nginx configtest and reload
+      when: nginx_remove_undefined_configs
+      tags:
+        - cleanup
 
     - name: setup config
       template:
@@ -61,8 +90,8 @@
 
     - name: setup geos
       template:
-        src: geo.conf.j2
-        dest: "/etc/nginx/conf.d/geo_{{ item.key }}.conf"
+        src: "{{ item.value.template | default('geo.conf.j2') }}"
+        dest: "{{ item.key | regex_replace('(.*)', nginx_geo_file_format) }}"
         owner: root
         group: root
         mode: 0644
@@ -74,8 +103,8 @@
 
     - name: setup maps
       template:
-        src: map.conf.j2
-        dest: "/etc/nginx/conf.d/map_{{ item.key }}.conf"
+        src: "{{ item.value.template | default('map.conf.j2') }}"
+        dest: "{{ item.key | regex_replace('(.*)', nginx_map_file_format) }}"
         owner: root
         group: root
         mode: 0644
@@ -87,8 +116,8 @@
 
     - name: setup upstreams
       template:
-        src: upstream.conf.j2
-        dest: "/etc/nginx/conf.d/upstream_{{ item.key }}.conf"
+        src: "{{ item.value.template | default('upstream.conf.j2') }}"
+        dest: "{{ item.key | regex_replace('(.*)', nginx_upstream_file_format) }}"
         owner: root
         group: root
         mode: 0644
@@ -100,8 +129,8 @@
 
     - name: setup servers
       template:
-        src: server.conf.j2
-        dest: "/etc/nginx/conf.d/server_{{ item.key }}.conf"
+        src: "{{ item.value.template | default('server.conf.j2') }}"
+        dest: "{{ item.key | regex_replace('(.*)', nginx_server_file_format) }}"
         owner: root
         group: root
         mode: 0644
