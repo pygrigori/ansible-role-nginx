@@ -43,6 +43,12 @@
               return 410;
           }
 
+      nginx_sets_real_ip_from:
+        rfc1918:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+
       nginx_logrotate: |
         /var/log/nginx/*.log {
                 daily

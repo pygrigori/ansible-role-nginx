@@ -57,13 +57,17 @@ nginx_servers: {}
 nginx_server_file_format: "/etc/nginx/conf.d/server_\\1.conf"
 nginx_server_config_files: "{{ nginx_servers.keys() | map('regex_replace', '(.*)', nginx_server_file_format) | list }}"
 
+nginx_sets_real_ip_from: {}
+nginx_set_real_ip_from_file_format: "/etc/nginx/conf.d/set_real_ip_from_\\1.conf"
+nginx_set_real_ip_from_config_files: "{{ nginx_sets_real_ip_from.keys() | map('regex_replace', '(.*)', nginx_set_real_ip_from_file_format) | list }}"
+
 nginx_upstreams: {}
 nginx_upstream_file_format: "/etc/nginx/conf.d/upstream_\\1.conf"
 nginx_upstream_config_files: "{{ nginx_upstreams.keys() | map('regex_replace', '(.*)', nginx_upstream_file_format) | list }}"
 
-nginx_config_dirs: "{{ [nginx_geo_file_format, nginx_map_file_format, nginx_server_file_format, nginx_upstream_file_format] | map('dirname') | list | unique }}"
+nginx_config_dirs: "{{ [nginx_geo_file_format, nginx_map_file_format, nginx_set_real_ip_from_file_format, nginx_server_file_format, nginx_upstream_file_format] | map('dirname') | list | unique }}"
 
-nginx_defined_configs: "{{ nginx_geo_config_files + nginx_map_config_files + nginx_server_config_files + nginx_upstream_config_files }}"
+nginx_defined_configs: "{{ nginx_geo_config_files + nginx_map_config_files + nginx_server_config_files + nginx_set_real_ip_from_config_files + nginx_upstream_config_files }}"
 nginx_existing_configs: "{{ nginx_existing_config_search | json_query('files[*].path') }}"
 nginx_undefined_configs: "{{ nginx_existing_configs | difference(nginx_defined_configs) }}"
 
