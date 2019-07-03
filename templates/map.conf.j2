@@ -6,6 +6,6 @@ map {{ item.value.source }} $map_{{ item.key }} {
 
 {% endif %}
 {% for key, value in item.value['values'].items() %}
-    {{ (key == '') | ternary("''", key) }} {{ (value == '') | ternary("''", value) }};
+    {{ (key == 'default') | ternary(key, '"%s"' | format(key)) }} "{{ value }}";
 {% endfor %}
 }
