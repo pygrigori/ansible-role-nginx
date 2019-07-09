@@ -67,8 +67,9 @@ nginx_upstream_config_files: "{{ nginx_upstreams.keys() | map('regex_replace', '
 
 nginx_config_dirs: "{{ [nginx_geo_file_format, nginx_map_file_format, nginx_set_real_ip_from_file_format, nginx_server_file_format, nginx_upstream_file_format] | map('dirname') | list | unique }}"
 
+nginx_external_configs: []
 nginx_defined_configs: "{{ nginx_geo_config_files + nginx_map_config_files + nginx_server_config_files + nginx_set_real_ip_from_config_files + nginx_upstream_config_files }}"
 nginx_existing_configs: "{{ nginx_existing_config_search | json_query('files[*].path') }}"
-nginx_undefined_configs: "{{ nginx_existing_configs | difference(nginx_defined_configs) }}"
+nginx_undefined_configs: "{{ nginx_existing_configs | difference(nginx_defined_configs + nginx_external_configs) }}"
 
 nginx_remove_undefined_configs: true
